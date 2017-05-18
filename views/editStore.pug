@@ -1,0 +1,9 @@
+extends layout
+
+include mixins/_storeForm
+
+block content
+  .inner
+    //This variable is available to us in our locals. Otherwise it might look like h2 #{title}. You cannot have a space between h2 and =.
+    h2=title 
+    +storeForm({name:"Horton"})
