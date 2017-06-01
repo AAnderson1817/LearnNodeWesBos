@@ -1,0 +1,11 @@
+extends layout
+
+include mixins/_storeCard
+
+block content
+  .inner
+    //This variable is available to us in our locals. Otherwise it might look like h2 #{title}.
+    h2=title 
+      .stores
+        each store in stores
+          +storeCard(store)
