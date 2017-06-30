@@ -1,5 +1,20 @@
 const mongoose = require('mongoose');
 const Store = mongoose.model('Store');
+const multer = require('multer');
+const jimp = require('jimp');
+const uuid = require('uuid');
+
+const multerOptions = {
+  storage: multer.memoryStorage(),
+  fileFilter(req, file, next) {
+    const isPhoto = file.mimetype.startsWith('image/');
+    if(isPhoto){
+      next(null, true);
+    }else{
+      next({message: 'That filetype is not allowed'},false);
+    }
+  }
+};
 
 exports.homePage = (req, res) => {
   res.render('index');
@@ -8,6 +23,17 @@ exports.homePage = (req, res) => {
 exports.addStore = (req, res) => {
   res.render('editStore', { title: 'Add Store' });
 };
+
+exports.upload = multer(multerOptions).single('photo');
+
+exports.resize = async(req, res, next)=>{
+  //Check if there is a new file to resize
+  if(!req.file){
+    next(); //skip to the next Middleware
+    return;
+  }
+  console.log(req.file);
+}
 
 exports.createStore = async (req, res) => {
   const store = await (new Store(req.body)).save();
@@ -31,6 +57,8 @@ exports.editStore = async (req, res) => {
 };
 
 exports.updateStore = async (req, res) => {
+  //set location data to be a point so that we don't lose gps data on update
+  req.body.location.type = 'Point';
   // find and update the store
   const store = await Store.findOneAndUpdate({ _id: req.params.id }, req.body, {
     new: true, // return the new store instead of the old one
