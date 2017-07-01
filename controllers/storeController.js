@@ -8,10 +8,10 @@ const multerOptions = {
   storage: multer.memoryStorage(),
   fileFilter(req, file, next) {
     const isPhoto = file.mimetype.startsWith('image/');
-    if(isPhoto){
+    if(isPhoto) {
       next(null, true);
-    }else{
-      next({message: 'That filetype is not allowed'},false);
+    } else {
+      next({ message: 'That filetype isn\'t allowed!' }, false);
     }
   }
 };
@@ -26,14 +26,21 @@ exports.addStore = (req, res) => {
 
 exports.upload = multer(multerOptions).single('photo');
 
-exports.resize = async(req, res, next)=>{
-  //Check if there is a new file to resize
-  if(!req.file){
-    next(); //skip to the next Middleware
+exports.resize = async (req, res, next) => {
+  // check if there is no new file to resize
+  if (!req.file) {
+    next(); // skip to the next middleware
     return;
   }
-  console.log(req.file);
-}
+  const extension = req.file.mimetype.split('/')[1];
+  req.body.photo = `${uuid.v4()}.${extension}`;
+  // now we resize
+  const photo = await jimp.read(req.file.buffer);
+  await photo.resize(800, jimp.AUTO);
+  await photo.write(`./public/uploads/${req.body.photo}`);
+  // once we have written the photo to our filesystem, keep going!
+  next();
+};
 
 exports.createStore = async (req, res) => {
   const store = await (new Store(req.body)).save();
@@ -57,7 +64,7 @@ exports.editStore = async (req, res) => {
 };
 
 exports.updateStore = async (req, res) => {
-  //set location data to be a point so that we don't lose gps data on update
+  // set the location data to be a point
   req.body.location.type = 'Point';
   // find and update the store
   const store = await Store.findOneAndUpdate({ _id: req.params.id }, req.body, {
